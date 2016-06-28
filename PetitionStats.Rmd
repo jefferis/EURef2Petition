@@ -207,7 +207,7 @@ eupet.lm=lm(sig_rate~Pop65ConstRate, data=sigdf)
 summary(eupet.lm)
 ```
 
-As expected constituencies with lower levels of over 65s are signing less.
+As expected constituencies with higher levels of over 65s are signing less.
 Now it is possible that some fraction of this effect is because older people
 are less likely to engage with the petitions website. Is this true?
 
