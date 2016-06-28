@@ -457,6 +457,7 @@ When you click the **Knit** button a document will be generated that includes bo
 
 # Acknowledgements
 UK constituency data came from https://github.com/kjhealy/uk-elections and 
-https://www.parliament.uk/mps-lords-and-offices/offices/commons/commonslibrary/statistics-for-uk-constituencies/. Thanks to both as well as petition.parliament.uk for
+https://www.parliament.uk/mps-lords-and-offices/offices/commons/commonslibrary/statistics-for-uk-constituencies/. 
+EU Referendum data was downloaded from http://www.electoralcommission.org.uk/.
+Thanks to all three as well as https://petition.parliament.uk/ for
 making data available.
-
