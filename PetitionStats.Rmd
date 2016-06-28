@@ -1,0 +1,415 @@
+---
+title: "EURef2Petition"
+author: "Gregory Jefferis"
+date: "26 June 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE, message=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(dplyr)
+library(knitr)
+```
+
+# Introduction
+I was curious about the *EU Referendum Rules triggering a 2nd EU Referendum* petition
+visible at https://petition.parliament.uk/petitions/131215. I started downloading
+the petition data every 10 mins from 10 am on Sat 25th and later upped the rate
+to every 2 mins. There is simple analysis presented below and you will be able
+to do more if you want using the data.
+
+## Summary
+1. About 95% of signatories are UK residents
+2. The petition was receiving about 2000 UK signatures/min at its peak
+3. Support is highest in Green (15.9%, n=1) and Lib Dem (6.1%, n=8) constituencies
+   but there is then not much of a step down to Con (5.6%) or Lab (5.0%)
+4. SNP constituencies (3.1%) are signing at approx half the rate that you might expect
+   giving the strong remain vote in Scotland.
+5. At a regional level, Scotland (3.2%) and Northern Ireland (3.4%) have signature rates less than half of the South East (6.6%) or London (9.0%)
+6. There is a weak but still very significant negative correlation between 
+   the proportion of older voters in a constituency and the number of signatures.
+7. There is a very strong positive correlation (R^2>0.8) between constituency    level referendum results and the rate of signing the petition.
+8. In this model, rates for Wales and especially Scotland were lower
+9. I found evidence for about 30,000 dubious signatures using UK post-codes in 2
+   constituencies on Sun am. petition.parliament.uk removed these within hours 
+   (without any input from me).
+10. There were a similar number of irregularities in non-UK signatures (at a higher proportional rate since the number of non-UK signatures is only 5% of the total).
+I did not analyse these further since they are not relevant to the petition process.
+
+# Load Data
+
+```{r}
+# summary data frame
+sdf=readRDS("signature_data.rds") 
+# list of all raw data
+pet_data=readRDS('munged_petition_data.rds')
+```
+
+We can get plot the total signatures and get a quick estimate of the number
+of signatures per minute since I started collecting data.
+
+```{r, fig.width=9}
+library(ggplot2)
+
+qplot(time, total, data=sdf, ylim=c(0,NA), geom='line')
+mylm=lm(total~time, data=sdf)
+summary(mylm)
+
+```
+
+We can repeat the plot but only with UK signatures since those are the only one
+of any relevance with respect to the parliamentary response.
+
+```{r, fig.width=9}
+# the same but UK signatures only by using consituency table
+sdf$uksigs=sapply(pet_data, function(x) sum(x$data$attributes$signatures_by_constituency$signature_count))
+
+# ggplot needs data in a *tall* rather than wide format
+library(tidyr)
+sdftall=gather(sdf[-1],count.type, n, -time)
+
+qplot(time, n, col=count.type, data=sdftall, geom='line', 
+      ylim=c(0,NA), ylab='signatures', xlab=NULL) +
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours") +
+  theme(legend.position = c(0.1, .9))
+```
+
+Note that the `r rev(sdf$uksigs)[1]` UK signatures make up 
+`r rev(sdf$uksigs)[1]/rev(sdf$total)[1]*100`% of the total.
+
+You can see a couple of obvious dislocations. The up-tick of about 10,000 
+non-UK signatures shortly after 3am Sunday obviously looks dubious and is
+characterised in further detail below.
+
+## Signatures per min
+
+We can take a look at how the number of signatures per minute has evolved:
+
+```{r, fig.width=9}
+with(sdf, 
+     qplot(time[-1], 
+           diff(total)/(as.integer(diff(time))/60), 
+           ylim=c(0,NA),
+           ylab="Signatures /min",
+           xlab='Time') +
+       scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+     +stat_smooth()
+)
+
+```
+
+You can see that there is one outlier of >10,000 signatures per minute, 
+corresponding to the blip in non-UK signatures at 3am on Sunday mentioned earlier. There are futher small blips (~1000-1500) on Monday either side of 12:00 but these turn out to be non-UK signatures so I have ignored them.
+
+Let's repeat with UK signatures only:
+```{r,  fig.width=9}
+with(sdf, 
+     qplot(time[-1], 
+           diff(uksigs)/(as.integer(diff(time))/60), 
+           ylim=c(0,NA),
+           ylab="Signatures /min",
+           xlab='Time') +
+       scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+     +stat_smooth(method = 'loess', span=.08)
+)
+```
+
+So I am pleased to report that UK does actually sleep during the small hours of
+the morning (though some people seemed to be awake during the early hours of 
+Sunday - see below). Overall this looks a reasonable activity profile and shows
+that at the peak, UK signatures were coming in at over 2000/min.
+
+## Comparison with constituency level information
+
+**petition.parliament.uk** releases a break down of data by constituency. We can
+use this to compare the petition data with constituency information including
+party, demographics etc. See Acknowledgements for data sources.
+```{r}
+
+by.mps=readRDS('general_election_by.mps.rds')
+all.winners <-  by.mps %>% 
+  select(Constituency, Votes, Party) %>% 
+  arrange(desc(Votes)) %>%
+  data.frame()
+
+constituency_names.df <- read.csv("constituency_names.csv", header=TRUE, row.names=1)
+all.winners=merge(all.winners, constituency_names.df)
+
+library(readxl)
+pop=read_excel("Population-by-age.xlsx", sheet = "Data")
+```
+
+Let's list some basic info for the top and bottom 20 constituencies. Note that
+sig_rate is the number of signatures per head of population (all ages):
+```{r}
+euref=pet_data[[length(pet_data)]]
+
+sigdf=euref$data$attributes$signatures_by_constituency
+sigdf=merge(sigdf, pop, by.x='ons_code', by.y = 'ONSConstID')
+sigdf$sig_rate=sigdf$signature_count/sigdf$PopTotalConstNum
+
+sigdf=merge(sigdf, all.winners, by.x='ons_code', by.y = 'id')
+sigdf %>% 
+  arrange(desc(sig_rate)) %>% 
+  select(c(ons_code:signature_count, sig_rate, Pop65ConstRate, Party)) %>% 
+  top_n(20, sig_rate) %>%
+  kable
+```
+
+```{r}
+sigdf %>% 
+  arrange(desc(sig_rate)) %>% 
+  select(c(ons_code:signature_count, sig_rate, Pop65ConstRate, Party)) %>% 
+  top_n(20, desc(sig_rate)) %>%
+  kable
+```
+
+
+From which a few interesting points emerge. Most of the top constituencies
+are in the Bremain hotspots in London/SE with Con or Lab MPs. 
+However interestingly the bottom 20 include 11 SNP constituencies (many of which presumably voted to remain). It looks like the Scots are not involved with this process.
+
+We can look at a summary by Party:
+
+```{r}
+sigdf %>%
+  group_by(Party) %>%
+  summarise(`Mean Sig Rate`=mean(sig_rate), `Constituencies`=length(sig_rate)) %>% 
+  arrange(desc(`Mean Sig Rate`)) %>%
+  kable()
+```
+
+all of which makes pretty good sense to me (Green and Lib Dem constituencies highest)
+Cons/Lab similarly. SNP lower than might be expected as noted above.
+
+We can look at a summary by Region:
+
+```{r}
+sigdf %>%
+  group_by(RegionName) %>%
+  summarise(`Mean Sig Rate`=mean(sig_rate), `Constituencies`=length(sig_rate)) %>% 
+  arrange(desc(`Mean Sig Rate`)) %>%
+  kable()
+```
+
+To my view this re-emphasises the fact that Scotland and Northern Ireland, which
+both voted to remain, are not engaging with this petition. However, it may be
+that this is not unusual (e.g. maybe they are not interested in petitioning the 
+Westminster legislature in general). This needs to be checked with other petitions.
+
+We can compare the signature rate with some demographic data:
+```{r}
+qplot(data=sigdf, sig_rate, Pop65ConstRate, xlim=c(0,NA), ylim=c(0,NA))+
+  stat_smooth(method = 'lm')
+eupet.lm=lm(sig_rate~Pop65ConstRate, data=sigdf)
+summary(eupet.lm)
+```
+
+As expected constituencies with lower levels of over 65s are signing less.
+Now it is possible that some fraction of this effect is because older people
+are less likely to engage with the petitions website. Is this true?
+
+### Comparison with EU Pamphlet petition
+
+The petition [STOP CAMERON spending British taxpayers’ money on Pro-EU Referendum leaflets]
+(https://petition.parliament.uk/petitions/116762)
+is on a similar topic but is likely to appeal to out rather than remain voters:
+
+```{r}
+library(jsonlite)
+eupamphlet.raw=fromJSON("https://petition.parliament.uk/petitions/116762.json")
+eupamphlet.sigdf=eupamphlet.raw$data$attributes$signatures_by_constituency
+# merge in constituency level demographic data used earlier
+eupamphlet.sigdf=merge(eupamphlet.sigdf, pop, by.x='ons_code', by.y = 'ONSConstID')
+# compute 
+eupamphlet.sigdf = mutate(eupamphlet.sigdf, sig_rate=signature_count/PopTotalConstNum)
+
+```
+
+We can then compare the proportion of over 65s in each constituency with the 
+rate of signatures:
+
+```{r}
+qplot(data=eupamphlet.sigdf, sig_rate, Pop65ConstRate/`Pop20-64ConstRate`, xlim=c(0,NA), ylim=c(0,NA))+
+  stat_smooth(method = 'lm')
+eupamhlet.lm=lm(sig_rate~I(Pop65ConstRate/`Pop20-64ConstRate`), data=eupamphlet.sigdf)
+summary(eupamhlet.lm)
+```
+
+Indeed there is a strong positive correlation (R^2=.45) and the effect size is much
+stronger than the negative correlation for the 2nd EU referendum signature.
+
+### Comparison with Jeremy Hunt Petition
+Ideally one would try to scrape as many of the petitions as possible to provide
+a baseline, but for the time being I just took one other large petition that
+did not strike me as being particularly likely to result in an age divide.
+```{r}
+library(jsonlite)
+jhunt.raw=fromJSON("https://petition.parliament.uk/petitions/121152.json")
+jhunt.sigdf=jhunt.raw$data$attributes$signatures_by_constituency
+# merge in constituency level demographic data used earlier
+jhunt.sigdf=merge(jhunt.sigdf, pop, by.x='ons_code', by.y = 'ONSConstID')
+# compute 
+jhunt.sigdf = mutate(jhunt.sigdf, sig_rate=signature_count/PopTotalConstNum)
+```
+
+We can then compare the proportion of over 65s in each constituency with the 
+rate of signatures:
+
+```{r}
+qplot(data=jhunt.sigdf, sig_rate, Pop65ConstRate, xlim=c(0,NA), ylim=c(0,NA))+
+  stat_smooth(method = 'lm')
+jhunt.lm=lm(sig_rate~Pop65ConstRate, data=jhunt.sigdf)
+summary(jhunt.lm)
+```
+
+Now if you look at linear model summaries, you'll see that the slope of the negative
+relationship for the euref petition is almost 15x greater than the Hunt petition.
+This support an asymmetry in the petition age profile consistent with the much 
+higher levels of support for leave voters.
+
+```{r}
+coef(eupet.lm)/coef(jhunt.lm)
+```
+
+All of which suggests to me that there appears to be a real negative relationship between 
+age and proportion of petition signatures on this new referendum petition. 
+
+# Comparison with Referendum Predictions
+
+Let's load up the referendum data from the electoral commission 
+## Referendum data
+
+```{r}
+# euref <- read.csv("http://www.electoralcommission.org.uk/__data/assets/file/0014/212135/EU-referendum-result-data.csv")
+euref <- readRDS('EU-referendum-result-data.rds')
+```
+
+Now the problem is that the referendum was reported not by constituencies but by
+regions, but maybe we can match up some of these as a starting point.
+
+```{r}
+nrow(euref)
+inboth=intersect(sigdf$ConstituencyName, euref$Area)
+length(inboth)
+```
+
+OK so `r length(inboth)` referendum regions and constituencies have the same name.
+
+Let's use these matches to look at some relationships:
+
+```{r}
+sigdf2=merge(sigdf, euref, by.x='ConstituencyName', by.y='Area')
+qplot(data=sigdf2,Pct_Remain,sig_rate)+geom_smooth(method = 'lm')
+```
+
+Hmm, there are some points that are rather separated from the rest. Just a hunch,
+but let's model the different member countries of the UK separately.
+
+```{r}
+qplot(data=sigdf2,Pct_Remain,sig_rate*100, col=Nation, 
+      xlab="Percent Voting Remain", ylab='Percent Signing Petition',
+      main=paste("Petition vs Referendum Results for",nrow(sigdf2), "UK Constituencies"))+
+  geom_smooth(method = 'lm')+
+  theme(legend.position = c(0.1, .8), legend.title=element_blank())
+```
+
+Yup, very large difference between Scotland and England / Wales. We can also look
+at the terms in the linear model that reflect this:
+
+```{r}
+euref.lm=lm(sig_rate~Pct_Remain+Nation,data=sigdf2)
+euref.lm
+summary(euref.lm)
+```
+
+Note that this full model has a very high R^2 >0.8. So, not that surprisingly, it seems that the knowing how people voted in the referendum
+is a very strong predictor of whether they signed this petition. Residuals
+in either direction might be evidence of regret (which polls have suggested to 2-3x more common in leave than remain voters). There looks to be a small
+up-tick in constituencies that were overwhelmingly for leave.
+However further work is required to match up constituency level data with referendum areas before drawing stronger conclusions.
+
+
+## Irregularities
+
+I was initially concerned at the linearity of the rate of signature growth during 
+the day (wondering if this might actually be an artefact of the back-end computer 
+systems operating close to capacity), but so far I 
+have not only found evidence of limited irregularities in the UK data.
+Investigation on Sunday (26 June) morning of the activity 
+found two constituencies where something odd has happened. I found these
+by dividing the data up by constituency and correlating the rate of signature
+growth by constituency with the national average. One of these was very obvious:
+the constituency with the most signatures, **Cities of London and Westminster**,
+had an implausibly large amount of activity overnight (unless there are a load of
+traders in Hong Kong ...)
+
+Overall this leads me to suggest that at the time of initial  writing ~30,000
+out of 2787004 UK signatures (~1.1%) might be invalid.
+
+For what it's worth the petitions team removed these fake signatures at around
+2pm on Sunday.
+
+Collect data
+```{r}
+all_sigcounts=t(sapply(pet_data,function(x) x$data$attributes$signatures_by_constituency$signature_count))
+colnames(all_sigcounts)=pet_data[[1]]$data$attributes$signatures_by_constituency$name
+rownames(all_sigcounts)=sdf$time
+all_sigcounts=cbind(sdf['time'], all_sigcounts)
+```
+
+Now let's calculate the correlation of all constituencies vs the UK average and 
+look for discrepancies
+```{r}
+library(dplyr)
+cor_vs_totaluk=apply(all_sigcounts[,-1], 2, cor, sdf$total)
+data.frame(constit=names(cor_vs_totaluk), cor=cor_vs_totaluk)  %>%
+  arrange(cor) %>%
+  top_n(10, desc(cor)) %>%
+  kable
+```
+
+A histogram makes these two outliers pretty obvious:
+
+```{r}
+hist(cor_vs_totaluk, col='red', breaks=50)
+hist(cor_vs_totaluk, col='red', breaks=50, ylim=c(0,50))
+```
+
+
+We can plot the data for the 2 dubious constituencies 
+
+```{r}
+qplot(time, `Cities of London and Westminster`,data=all_sigcounts)+
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+qplot(time, `Worsley and Eccles South`,data=all_sigcounts) + 
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+```
+
+which shows both the suspicious night time activity and its correction.
+
+For comparison here are the 3rd and 9th constituencies (with much higher correlation scores):
+```{r}
+qplot(time, `Rhondda`,data=all_sigcounts) + 
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+
+qplot(time, `St Ives`,data=all_sigcounts) + 
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+```
+
+# Notes
+## Personal 
+For the record, I am a scientist and I voted remain because in my view that was
+objectively the best decision for the country and my own profession.
+
+## Technical note
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
+
+# Acknowledgements
+UK constituency data came from https://github.com/kjhealy/uk-elections and 
+https://www.parliament.uk/mps-lords-and-offices/offices/commons/commonslibrary/statistics-for-uk-constituencies/. Thanks to both as well as petition.parliament.uk for
+making data available.
+
