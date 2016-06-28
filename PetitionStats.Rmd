@@ -428,9 +428,9 @@ brack.lm=lm(Bracknell~0+uksigs, data=subset(bdf, time<ISOdatetime(2016,6,27,14,0
 all.smooth=loess(uksigs~as.integer(time), data=sdf, span=0.08)
 bdf$Bracknell.pred=all.smooth$fitted*coef(brack.lm)
 
-plot(Bracknell~time,data=bdf)
+plot(Bracknell~time,data=bdf, type='l', main='~3400 Fake Signatures in Bracknell')
 lines(Bracknell.pred~time, data=bdf, col='red', lwd=2)
-
+legend(min(bdf$time),max(bdf$Bracknell)*0.9, legend=c('predicted','observed'), col=c('red','black'), lty=1, bty='n')
 ```
 
 And the (pretty precisely) estimated number of fake signatures is:
@@ -438,6 +438,7 @@ And the (pretty precisely) estimated number of fake signatures is:
 ```{r}
 nfakesigs=with(subset(bdf, time>ISOdatetime(2016,6,28,0,0,0, tz='Europe/London')),
      c(mean=mean(Bracknell-Bracknell.pred), sd=sd(Bracknell-Bracknell.pred)))
+nfakesigs
 ```
 
 ie. `r nfakesigs['mean']` (+/- `r nfakesigs['sd']` sd) or `r nfakesigs['mean']/max(sdf$uksigs)*100`
