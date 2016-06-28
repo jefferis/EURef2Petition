@@ -419,7 +419,7 @@ with(all_sigcounts,
 
 We can add a prediction of what the data should have looked like by calculating
 a linear model of Bracknell vs the whole UK before the spike and then applying
-that to the a smoothed version of the whole UK data. 
+that to the a smoothed version of the whole UK data.
 
 ```{r}
 bdf=mutate(sdf, Bracknell=all_sigcounts$Bracknell)
@@ -428,21 +428,27 @@ brack.lm=lm(Bracknell~0+uksigs, data=subset(bdf, time<ISOdatetime(2016,6,27,14,0
 all.smooth=loess(uksigs~as.integer(time), data=sdf, span=0.08)
 bdf$Bracknell.pred=all.smooth$fitted*coef(brack.lm)
 
-plot(Bracknell~time,data=bdf, type='l', main='~3400 Fake Signatures in Bracknell')
+plot(Bracknell~time,data=bdf, type='l', main='~3400 Fake Signatures in Bracknell (Now Removed)')
 lines(Bracknell.pred~time, data=bdf, col='red', lwd=2)
-legend(min(bdf$time),max(bdf$Bracknell)*0.9, legend=c('predicted','observed'), col=c('red','black'), lty=1, bty='n')
+legend(min(bdf$time),max(bdf$Bracknell)*0.9, legend=c('predicted','observed'),
+       col=c('red','black'), lty=1, bty='n')
 ```
 
 And the (pretty precisely) estimated number of fake signatures is:
 
 ```{r}
-nfakesigs=with(subset(bdf, time>ISOdatetime(2016,6,28,0,0,0, tz='Europe/London')),
+nfakesigs=with(subset(bdf, time>ISOdatetime(2016,6,28,0,0,0, tz='Europe/London') & 
+                        time<ISOdatetime(2016,6,28,20,0,0, tz='Europe/London')),
      c(mean=mean(Bracknell-Bracknell.pred), sd=sd(Bracknell-Bracknell.pred)))
 nfakesigs
 ```
 
 ie. `r nfakesigs['mean']` (+/- `r nfakesigs['sd']` sd) or `r nfakesigs['mean']/max(sdf$uksigs)*100`
 % of the total UK sigs.
+
+On Tue night, the petition.parliament.uk team confirmed that they had found 
+these independently on Mon night and they removed them from the reported data. 
+Apparently my numbers were off by ~2% (they found `r max(abs(diff(bdf$Bracknell)))` ).
 
 # Notes
 ## Personal 
