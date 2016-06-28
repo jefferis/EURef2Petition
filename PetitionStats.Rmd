@@ -448,7 +448,10 @@ ie. `r nfakesigs['mean']` (+/- `r nfakesigs['sd']` sd) or `r nfakesigs['mean']/m
 
 On Tue night, the petition.parliament.uk team confirmed that they had found 
 these independently on Mon night and they removed them from the reported data. 
-Apparently my numbers were off by ~2% (they found `r max(abs(diff(bdf$Bracknell)))` ).
+Apparently my numbers were off by 80; they found `r max(abs(diff(bdf$Bracknell)))`. 
+Note to self 2 sf was sufficient, 95 CI would have been good but the small
+baseline shift at the start of the activity spike was likely the main cause
+of the 2% discrepancy in the effect size prediction.
 
 # Notes
 ## Personal 
