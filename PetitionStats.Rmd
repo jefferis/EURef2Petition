@@ -72,7 +72,7 @@ sdftall=gather(sdf[-1],count.type, n, -time)
 
 qplot(time, n, col=count.type, data=sdftall, geom='line', 
       ylim=c(0,NA), ylab='signatures', xlab=NULL) +
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours") +
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours") +
   theme(legend.position = c(0.1, .9))
 ```
 
@@ -94,7 +94,7 @@ with(sdf,
            ylim=c(0,NA),
            ylab="Signatures /min",
            xlab='Time') +
-       scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+       scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
      +stat_smooth()
 )
 
@@ -111,7 +111,7 @@ with(sdf,
            ylim=c(0,NA),
            ylab="Signatures /min",
            xlab='Time') +
-       scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+       scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
      +stat_smooth(method = 'loess', span=.08)
 )
 ```
@@ -383,9 +383,9 @@ We can plot the data for the 2 dubious constituencies
 
 ```{r}
 qplot(time, `Cities of London and Westminster`,data=all_sigcounts)+
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
 qplot(time, `Worsley and Eccles South`,data=all_sigcounts) + 
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
 ```
 
 which shows both the suspicious night time activity and its correction.
@@ -393,10 +393,10 @@ which shows both the suspicious night time activity and its correction.
 For comparison here are the 3rd and 9th constituencies (with much higher correlation scores):
 ```{r}
 qplot(time, `Rhondda`,data=all_sigcounts) + 
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
 
 qplot(time, `St Ives`,data=all_sigcounts) + 
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
 ```
 
 ## (A few) more fake signatures
@@ -405,7 +405,7 @@ post-code(s) in Bracknell. This took place late on Monday afternoon/evening.
 
 ```{r}
 qplot(time, `Bracknell`,data=all_sigcounts) + 
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
 ```
 
 This may be more obvious if we plot as signatures / minute.
@@ -413,7 +413,7 @@ This may be more obvious if we plot as signatures / minute.
 with(all_sigcounts,
      qplot(time[-1], diff(`Bracknell`)/diff(as.integer(time)/60),
            xlab=NULL, ylab='Signatures/minute') + geom_smooth(method='loess', span=.08)+
-  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours"))
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours"))
 
 ```
 
