@@ -16,7 +16,7 @@ I was curious about the *EU Referendum Rules triggering a 2nd EU Referendum* pet
 visible at https://petition.parliament.uk/petitions/131215. I started downloading
 the petition data every 10 mins from 10 am on Sat 25th and later upped the rate
 to every 2 mins. There is simple analysis presented below and you will be able
-to do more if you want using the data.
+to do more if you want using the data (see https://github.com/jefferis/EURef2Petition)
 
 ## Summary
 1. About 95% of signatories are UK residents
