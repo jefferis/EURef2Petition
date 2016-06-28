@@ -33,7 +33,9 @@ to do more if you want using the data.
 9. I found evidence for about 30,000 dubious signatures using UK post-codes in 2
    constituencies on Sun am. petition.parliament.uk removed these within hours 
    (without any input from me).
-10. There were a similar number of irregularities in non-UK signatures (at a higher proportional rate since the number of non-UK signatures is only 5% of the total).
+10. About 3340 additional fake signatures were added on Mon later afternoon/evening
+   with a postcode in the Bracknell constituency.
+11. There were a similar number of irregularities in non-UK signatures (at a higher proportional rate since the number of non-UK signatures is only 5% of the total).
 I did not analyse these further since they are not relevant to the petition process.
 
 # Load Data
@@ -396,6 +398,50 @@ qplot(time, `Rhondda`,data=all_sigcounts) +
 qplot(time, `St Ives`,data=all_sigcounts) + 
   scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
 ```
+
+## (A few) more fake signatures
+On Tues, I spotted another attempt to add fake signatures with 
+post-code(s) in Bracknell. This took place late on Monday afternoon/evening.
+
+```{r}
+qplot(time, `Bracknell`,data=all_sigcounts) + 
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours")
+```
+
+This may be more obvious if we plot as signatures / minute.
+```{r}
+with(all_sigcounts,
+     qplot(time[-1], diff(`Bracknell`)/diff(as.integer(time)/60),
+           xlab=NULL, ylab='Signatures/minute') + geom_smooth(method='loess', span=.08)+
+  scale_x_datetime(date_labels="%a %H:%M", date_breaks="6 hours"))
+
+```
+
+We can add a prediction of what the data should have looked like by calculating
+a linear model of Bracknell vs the whole UK before the spike and then applying
+that to the a smoothed version of the whole UK data. 
+
+```{r}
+bdf=mutate(sdf, Bracknell=all_sigcounts$Bracknell)
+brack.lm=lm(Bracknell~0+uksigs, data=subset(bdf, time<ISOdatetime(2016,6,27,14,0,0, tz='Europe/London')))
+
+all.smooth=loess(uksigs~as.integer(time), data=sdf, span=0.08)
+bdf$Bracknell.pred=all.smooth$fitted*coef(brack.lm)
+
+plot(Bracknell~time,data=bdf)
+lines(Bracknell.pred~time, data=bdf, col='red', lwd=2)
+
+```
+
+And the (pretty precisely) estimated number of fake signatures is:
+
+```{r}
+nfakesigs=with(subset(bdf, time>ISOdatetime(2016,6,28,0,0,0, tz='Europe/London')),
+     c(mean=mean(Bracknell-Bracknell.pred), sd=sd(Bracknell-Bracknell.pred)))
+```
+
+ie. `r nfakesigs['mean']` (+/- `r nfakesigs['sd']` sd) or `r nfakesigs['mean']/max(sdf$uksigs)*100`
+% of the total UK sigs.
 
 # Notes
 ## Personal 
