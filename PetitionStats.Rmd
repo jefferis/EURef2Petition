@@ -337,7 +337,7 @@ However further work is required to match up constituency level data with refere
 I was initially concerned at the linearity of the rate of signature growth during 
 the day (wondering if this might actually be an artefact of the back-end computer 
 systems operating close to capacity), but so far I 
-have not only found evidence of limited irregularities in the UK data.
+have only found evidence of limited irregularities in the UK data.
 Investigation on Sunday (26 June) morning of the activity 
 found two constituencies where something odd has happened. I found these
 by dividing the data up by constituency and correlating the rate of signature
