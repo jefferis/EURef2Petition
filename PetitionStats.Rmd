@@ -59,8 +59,8 @@ summary(mylm)
 
 ```
 
-We can repeat the plot but only with UK signatures since those are the only one
-of any relevance with respect to the parliamentary response.
+We can repeat the plot but only with UK signatures (although British citizens 
+abrorad have the right to sign there is more data available for UK residents)
 
 ```{r, fig.width=9}
 # the same but UK signatures only by using consituency table
@@ -267,12 +267,18 @@ summary(jhunt.lm)
 
 Now if you look at linear model summaries, you'll see that the slope of the negative
 relationship for the euref petition is almost 15x greater than the Hunt petition.
-This support an asymmetry in the petition age profile consistent with the much 
-higher levels of support for leave voters.
+However we need to adjust for the fact that signature rate is much higher for the
+EU petition. We'll adjust by the ratio of the mean signature rates for the two
+petitions.
 
 ```{r}
-coef(eupet.lm)/coef(jhunt.lm)
+coef(eupet.lm)/coef(jhunt.lm)*sum(jhunt.sigdf$sig_rate)/sum(sigdf$sig_rate)
 ```
+
+This gives a factor of 1.5 difference in the age-response slope (EU ref has stronger negative age correlation).
+
+These results support an asymmetry in the petition age profile consistent with the much 
+higher levels of support for leave voters.
 
 All of which suggests to me that there appears to be a real negative relationship between 
 age and proportion of petition signatures on this new referendum petition. 
@@ -328,7 +334,7 @@ summary(euref.lm)
 Note that this full model has a very high R^2 >0.8. So, not that surprisingly, it seems that the knowing how people voted in the referendum
 is a very strong predictor of whether they signed this petition. Residuals
 in either direction might be evidence of regret (which polls have suggested to 2-3x more common in leave than remain voters). There looks to be a small
-up-tick in constituencies that were overwhelmingly for leave.
+up-tick in constituencies that were overwhelmingly for leave. 
 However further work is required to match up constituency level data with referendum areas before drawing stronger conclusions.
 
 
