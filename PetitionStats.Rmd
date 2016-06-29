@@ -411,7 +411,7 @@ qplot(time, `Bracknell`,data=all_sigcounts) +
 This may be more obvious if we plot as signatures / minute.
 ```{r}
 with(all_sigcounts,
-     qplot(time[-1], diff(`Bracknell`)/diff(as.integer(time)/60),
+     qplot(time[-1], diff(`Bracknell`)/diff(as.integer(time)/60), ylim=c(0,NA),
            xlab=NULL, ylab='Signatures/minute') + geom_smooth(method='loess', span=.08)+
   scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours"))
 
