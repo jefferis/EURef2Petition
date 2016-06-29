@@ -459,6 +459,22 @@ Note to self 2 sf was sufficient, 95 CI would have been good but the small
 baseline shift at the start of the activity spike was likely the main cause
 of the 2% discrepancy in the effect size prediction.
 
+## Other irregularities
+
+There have been other irregularities that are harder for me to spot with these data
+than the Petitions team, whom I assume have acess to additional information (IP?).
+This is evident from cases where corrections have been made:
+
+```{r}
+dd=apply(all_sigcounts[,-1],2,diff)
+# this is not quite correct because it is sigs_removed + sigs added in prev 2 min
+sigs_removed=-apply(dd, 2, min)
+plot(table(sigs_removed)[-1], log='x', xlab='Signatures removed', ylab='Frequency')
+```
+These fake signatures, account for a further 
+`r sum(sort(sigs_removed[sigs_removed>0], decreasing = T)[-(1:3)])`
+of the UK signatures.
+
 # Notes
 ## Personal 
 For the record, I am a scientist and I voted remain because in my view that was
