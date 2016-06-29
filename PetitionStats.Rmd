@@ -471,6 +471,7 @@ dd=apply(all_sigcounts[,-1],2,diff)
 sigs_removed=-apply(dd, 2, min)
 plot(table(sigs_removed)[-1], log='x', xlab='Signatures removed', ylab='Frequency')
 ```
+
 These fake signatures, account for a further 
 `r sum(sort(sigs_removed[sigs_removed>0], decreasing = T)[-(1:3)])`
 of the UK signatures.
