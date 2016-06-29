@@ -95,7 +95,7 @@ with(sdf,
            ylab="Signatures /min",
            xlab='Time') +
        scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
-     +stat_smooth()
+     +stat_smooth(method = 'loess', span=.03)
 )
 
 ```
@@ -112,7 +112,7 @@ with(sdf,
            ylab="Signatures /min",
            xlab='Time') +
        scale_x_datetime(date_labels="%a %H:%M", date_breaks="12 hours")
-     +stat_smooth(method = 'loess', span=.08)
+     +stat_smooth(method = 'loess', span=.03)
 )
 ```
 
