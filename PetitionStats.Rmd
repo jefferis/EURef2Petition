@@ -288,7 +288,7 @@ euref <- readRDS('EU-referendum-result-data.rds')
 ```
 
 Now the problem is that the referendum was reported not by constituencies but by
-regions, but maybe we can match up some of these as a starting point.
+`r nrow(euref)` areas, but maybe we can match up some of these as a starting point.
 
 ```{r}
 nrow(euref)
