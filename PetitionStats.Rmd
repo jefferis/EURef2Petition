@@ -364,7 +364,7 @@ Now let's calculate the correlation of all constituencies vs the UK average and
 look for discrepancies
 ```{r}
 library(dplyr)
-cor_vs_totaluk=apply(all_sigcounts[,-1], 2, cor, sdf$total)
+cor_vs_totaluk=apply(all_sigcounts[,-1], 2, cor, sdf$uksigs)
 data.frame(constit=names(cor_vs_totaluk), cor=cor_vs_totaluk)  %>%
   arrange(cor) %>%
   top_n(10, desc(cor)) %>%
