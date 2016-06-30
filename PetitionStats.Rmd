@@ -363,6 +363,27 @@ no.ni %>%
   kable
 ```
 
+Repeat but this time with an extra predictor:
+
+```{r}
+# Make a model for data where we have matched constits vs regions
+# (poorly but apparently with good predictive power)
+# Could also use percentage of over 65s as additional predictor
+euref.lm2=lm(Pct_Remain~sig_rate+Nation+Pop65ConstRate,data=sigdf2)
+
+summary(euref.lm2)
+
+# make new data set with everything except NI
+no.ni=droplevels(subset(sigdf, Nation!="Northern Ireland"))
+
+no.ni$pred_remain=predict(euref.lm2, no.ni)
+
+no.ni$eurpred_binary=ifelse(no.ni$pred_remain>50, "Remain", "Leave")
+table(no.ni$Party, no.ni$eurpred_binary) %>% kable
+
+```
+
+
 ## Irregularities
 
 I was initially concerned at the linearity of the rate of signature growth during 
