@@ -337,6 +337,31 @@ in either direction might be evidence of regret (which polls have suggested to 2
 up-tick in constituencies that were overwhelmingly for leave. 
 However further work is required to match up constituency level data with referendum areas before drawing stronger conclusions.
 
+## Predicting which constituencie voted to leave
+We can use the signature distributions to predict which constituencies voted to
+leave/remain in the EU. We need to drop Northern Ireland since we have no
+constituency level information for that
+
+```{r}
+# Make a model for data where we have matched constits vs regions
+# (poorly but apparently with good predictive power)
+# Could also use percentage of over 65s as additional predictor
+euref.lm2=lm(Pct_Remain~sig_rate+Nation,data=sigdf2)
+
+summary(euref.lm2)
+
+# make new data set with everything except NI
+no.ni=droplevels(subset(sigdf, Nation!="Northern Ireland"))
+
+no.ni$pred_remain=predict(euref.lm2, no.ni)
+
+no.ni$eurpred_binary=ifelse(no.ni$pred_remain>50, "Remain", "Leave")
+table(no.ni$Party, no.ni$eurpred_binary) %>% kable
+
+no.ni %>% 
+  select(ConstituencyName,mp, eurpred_binary, pred_remain, Party, Nation, ons_code) %>% 
+  kable
+```
 
 ## Irregularities
 
