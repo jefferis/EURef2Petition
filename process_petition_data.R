@@ -3,6 +3,7 @@ ff=dir(pattern=" \\.rds")
 names(ff)=sub("^[0-9]+ (.*) \\.rds$","\\1",ff)
 ll=sapply(ff, readRDS, simplify = F)
 library(httr)
+library(jsonlite)
 ll2=sapply(ll, function(x) fromJSON(content(x, type='text')), simplify = F)
 saveRDS(ll2, file='munged_petition_data.rds')
 sdf=data.frame(f=I(ff), 
